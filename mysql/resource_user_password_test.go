@@ -14,9 +14,9 @@ func TestAccUserPassword_basic(t *testing.T) {
 			{
 				Config: testAccUserPasswordConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user_password.test", "user", "jdoe"),
-					resource.TestCheckResourceAttrSet("mysql_user_password.test", "encrypted_password"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user_password.test", "user", "jdoe"),
+					resource.TestCheckResourceAttrSet("singlestore_user_password.test", "encrypted_password"),
 				),
 			},
 		},
@@ -24,12 +24,12 @@ func TestAccUserPassword_basic(t *testing.T) {
 }
 
 const testAccUserPasswordConfig_basic = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
   user = "jdoe"
 }
 
-resource "mysql_user_password" "test" {
-  user    = "${mysql_user.test.user}"
+resource "singlestore_user_password" "test" {
+  user    = "${singlestore_user.test.user}"
   pgp_key = "keybase:joestump"
 }
 `

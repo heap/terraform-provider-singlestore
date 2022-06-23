@@ -4,7 +4,7 @@
 example.tf
 terraform.tfplan
 terraform.tfstate
-terraform-provider-mysql
+terraform-provider-singlestore
 bin/
 modules-dev/
 /pkg/
@@ -24,6 +24,7 @@ website/node_modules
 *.iml
 *.test
 *.iml
+dist
 
 website/vendor
 

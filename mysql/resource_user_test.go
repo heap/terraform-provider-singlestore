@@ -19,31 +19,31 @@ func TestAccUser_basic(t *testing.T) {
 			{
 				Config: testAccUserConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password")),
-					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "NONE"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "plaintext_password", hashSum("password")),
+					resource.TestCheckResourceAttr("singlestore_user.test", "tls_option", "NONE"),
 				),
 			},
 			{
 				Config: testAccUserConfig_ssl,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password")),
-					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "SSL"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "plaintext_password", hashSum("password")),
+					resource.TestCheckResourceAttr("singlestore_user.test", "tls_option", "SSL"),
 				),
 			},
 			{
 				Config: testAccUserConfig_newPass,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password2")),
-					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "NONE"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "plaintext_password", hashSum("password2")),
+					resource.TestCheckResourceAttr("singlestore_user.test", "tls_option", "NONE"),
 				),
 			},
 		},
@@ -59,10 +59,10 @@ func TestAccUser_auth(t *testing.T) {
 			{
 				Config: testAccUserConfig_auth_iam_plugin,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserAuthExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "auth_plugin", "mysql_no_login"),
+					testAccUserAuthExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "auth_plugin", "mysql_no_login"),
 				),
 			},
 		},
@@ -78,19 +78,19 @@ func TestAccUser_deprecated(t *testing.T) {
 			{
 				Config: testAccUserConfig_deprecated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "password", "password"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "password", "password"),
 				),
 			},
 			{
 				Config: testAccUserConfig_deprecated_newPass,
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("mysql_user.test"),
-					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
-					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "password", "password2"),
+					testAccUserExists("singlestore_user.test"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_user.test", "password", "password2"),
 				),
 			},
 		},
@@ -166,7 +166,7 @@ func testAccUserCheckDestroy(s *terraform.State) error {
 	}
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "mysql_user" {
+		if rs.Type != "singlestore_user" {
 			continue
 		}
 
@@ -185,7 +185,7 @@ func testAccUserCheckDestroy(s *terraform.State) error {
 }
 
 const testAccUserConfig_basic = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user = "jdoe"
     host = "example.com"
     plaintext_password = "password"
@@ -193,7 +193,7 @@ resource "mysql_user" "test" {
 `
 
 const testAccUserConfig_ssl = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user = "jdoe"
     host = "example.com"
 	plaintext_password = "password"
@@ -202,7 +202,7 @@ resource "mysql_user" "test" {
 `
 
 const testAccUserConfig_newPass = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user = "jdoe"
     host = "example.com"
     plaintext_password = "password2"
@@ -210,7 +210,7 @@ resource "mysql_user" "test" {
 `
 
 const testAccUserConfig_deprecated = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user = "jdoe"
     host = "example.com"
     password = "password"
@@ -218,7 +218,7 @@ resource "mysql_user" "test" {
 `
 
 const testAccUserConfig_deprecated_newPass = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user = "jdoe"
     host = "example.com"
     password = "password2"
@@ -226,7 +226,7 @@ resource "mysql_user" "test" {
 `
 
 const testAccUserConfig_auth_iam_plugin = `
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
     user        = "jdoe"
     host        = "example.com"
     auth_plugin = "mysql_no_login"

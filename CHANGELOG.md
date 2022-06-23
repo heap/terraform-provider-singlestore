@@ -1,3 +1,10 @@
+## 2.0.0 (Singlestore)
+FEATURES:
+* Remove `CHARACTER SET` and `COLLATE` options when creating a database since it's not supported by Singlestore.
+* Support for bottomless databases
+* Add pipelines and resource poools
+* Other compatibility changes
+
 ## 1.9.1 (Unreleased)
 ## 1.9.0 (November 07, 2019)
 

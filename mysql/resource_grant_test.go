@@ -24,22 +24,22 @@ func TestAccGrant(t *testing.T) {
 			{
 				Config: testAccGrantConfig_basic(dbName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccPrivilegeExists("mysql_grant.test", "SELECT"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
-					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "database", dbName),
-					resource.TestCheckResourceAttr("mysql_grant.test", "table", "*"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "tls_option", "NONE"),
+					testAccPrivilegeExists("singlestore_grant.test", "SELECT"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "database", dbName),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "table", "*"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "tls_option", "NONE"),
 				),
 			},
 			{
 				Config: testAccGrantConfig_ssl(dbName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccPrivilegeExists("mysql_grant.test", "SELECT"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
-					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "database", dbName),
-					resource.TestCheckResourceAttr("mysql_grant.test", "tls_option", "SSL"),
+					testAccPrivilegeExists("singlestore_grant.test", "SELECT"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "database", dbName),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "tls_option", "SSL"),
 				),
 			},
 		},
@@ -52,30 +52,30 @@ func TestAccGrant_grantOption(t *testing.T) {
 	db2 := fmt.Sprintf("tf-test-%d", randInt+1)
 
 	config := fmt.Sprintf(`
-resource "mysql_database" "db1" {
+resource "singlestore_database" "db1" {
   name = "%s"
 }
 
-resource "mysql_database" "db2" {
+resource "singlestore_database" "db2" {
   name = "%s"
 }
 
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
   user     = "jdoe-%d"
   host     = "example.com"
 }
 
-resource "mysql_grant" "test_db1" {
-  user       = mysql_user.test.user
-  host       = mysql_user.test.host
-  database   = mysql_database.db1.name
+resource "singlestore_grant" "test_db1" {
+  user       = singlestore_user.test.user
+  host       = singlestore_user.test.host
+  database   = singlestore_database.db1.name
   privileges = ["SELECT"]
 }
 
-resource "mysql_grant" "test_db2" {
-  user       = mysql_user.test.user
-  host       = mysql_user.test.host
-  database   = mysql_database.db2.name
+resource "singlestore_grant" "test_db2" {
+  user       = singlestore_user.test.user
+  host       = singlestore_user.test.host
+  database   = singlestore_database.db2.name
   privileges = ["SELECT"]
   grant = true
 }
@@ -89,18 +89,18 @@ resource "mysql_grant" "test_db2" {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testAccPrivilegeExists("mysql_grant.test_db1", "SELECT"),
-					resource.TestCheckResourceAttr("mysql_grant.test_db1", "user", fmt.Sprintf("jdoe-%d", randInt)),
-					resource.TestCheckResourceAttr("mysql_grant.test_db1", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test_db1", "database", db1),
-					resource.TestCheckResourceAttr("mysql_grant.test_db1", "table", "*"),
-					resource.TestCheckResourceAttr("mysql_grant.test_db1", "grant", "false"),
+					testAccPrivilegeExists("singlestore_grant.test_db1", "SELECT"),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db1", "user", fmt.Sprintf("jdoe-%d", randInt)),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db1", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db1", "database", db1),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db1", "table", "*"),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db1", "grant", "false"),
 
-					testAccPrivilegeExists("mysql_grant.test_db2", "SELECT"),
-					resource.TestCheckResourceAttr("mysql_grant.test_db2", "user", fmt.Sprintf("jdoe-%d", randInt)),
-					resource.TestCheckResourceAttr("mysql_grant.test_db2", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test_db2", "database", db2),
-					resource.TestCheckResourceAttr("mysql_grant.test_db2", "grant", "true"),
+					testAccPrivilegeExists("singlestore_grant.test_db2", "SELECT"),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db2", "user", fmt.Sprintf("jdoe-%d", randInt)),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db2", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db2", "database", db2),
+					resource.TestCheckResourceAttr("singlestore_grant.test_db2", "grant", "true"),
 				),
 			},
 		},
@@ -135,7 +135,7 @@ func TestAccGrant_role(t *testing.T) {
 			{
 				Config: testAccGrantConfig_role(dbName, roleName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("mysql_grant.test", "role", roleName),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "role", roleName),
 				),
 			},
 		},
@@ -170,9 +170,9 @@ func TestAccGrant_roleToUser(t *testing.T) {
 			{
 				Config: testAccGrantConfig_roleToUser(dbName, roleName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("mysql_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
-					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "roles.#", "1"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "user", fmt.Sprintf("jdoe-%s", dbName)),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("singlestore_grant.test", "roles.#", "1"),
 				),
 			},
 		},
@@ -242,7 +242,7 @@ func testAccGrantCheckDestroy(s *terraform.State) error {
 	}
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "mysql_grant" {
+		if rs.Type != "singlestore_grant" {
 			continue
 		}
 
@@ -279,19 +279,19 @@ func testAccGrantCheckDestroy(s *terraform.State) error {
 
 func testAccGrantConfig_basic(dbName string) string {
 	return fmt.Sprintf(`
-resource "mysql_database" "test" {
+resource "singlestore_database" "test" {
   name = "%s"
 }
 
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
   user     = "jdoe-%s"
   host     = "example.com"
 }
 
-resource "mysql_grant" "test" {
-  user       = "${mysql_user.test.user}"
-  host       = "${mysql_user.test.host}"
-  database   = "${mysql_database.test.name}"
+resource "singlestore_grant" "test" {
+  user       = "${singlestore_user.test.user}"
+  host       = "${singlestore_user.test.host}"
+  database   = "${singlestore_database.test.name}"
   privileges = ["UPDATE", "SELECT"]
 }
 `, dbName, dbName)
@@ -299,19 +299,19 @@ resource "mysql_grant" "test" {
 
 func testAccGrantConfig_ssl(dbName string) string {
 	return fmt.Sprintf(`
-resource "mysql_database" "test" {
+resource "singlestore_database" "test" {
   name = "%s"
 }
 
-resource "mysql_user" "test" {
+resource "singlestore_user" "test" {
   user     = "jdoe-%s"
   host     = "example.com"
 }
 
-resource "mysql_grant" "test" {
-  user       = "${mysql_user.test.user}"
-  host       = "${mysql_user.test.host}"
-  database   = "${mysql_database.test.name}"
+resource "singlestore_grant" "test" {
+  user       = "${singlestore_user.test.user}"
+  host       = "${singlestore_user.test.host}"
+  database   = "${singlestore_database.test.name}"
   privileges = ["UPDATE", "SELECT"]
   tls_option = "SSL"
 }
@@ -320,17 +320,17 @@ resource "mysql_grant" "test" {
 
 func testAccGrantConfig_role(dbName string, roleName string) string {
 	return fmt.Sprintf(`
-resource "mysql_database" "test" {
+resource "singlestore_database" "test" {
   name = "%s"
 }
 
-resource "mysql_role" "test" {
+resource "singlestore_role" "test" {
   name = "%s"
 }
 
-resource "mysql_grant" "test" {
-  role       = "${mysql_role.test.name}"
-  database   = "${mysql_database.test.name}"
+resource "singlestore_grant" "test" {
+  role       = "${singlestore_role.test.name}"
+  database   = "${singlestore_database.test.name}"
   privileges = ["SELECT", "UPDATE"]
 }
 `, dbName, roleName)
@@ -338,24 +338,24 @@ resource "mysql_grant" "test" {
 
 func testAccGrantConfig_roleToUser(dbName string, roleName string) string {
 	return fmt.Sprintf(`
-resource "mysql_database" "test" {
+resource "singlestore_database" "test" {
   name = "%s"
 }
 
-resource "mysql_user" "jdoe" {
+resource "singlestore_user" "jdoe" {
   user     = "jdoe-%s"
   host     = "example.com"
 }
 
-resource "mysql_role" "test" {
+resource "singlestore_role" "test" {
   name = "%s"
 }
 
-resource "mysql_grant" "test" {
-  user     = "${mysql_user.jdoe.user}"
-  host     = "${mysql_user.jdoe.host}"
-  database = "${mysql_database.test.name}"
-  roles    = ["${mysql_role.test.name}"]
+resource "singlestore_grant" "test" {
+  user     = "${singlestore_user.jdoe.user}"
+  host     = "${singlestore_user.jdoe.host}"
+  database = "${singlestore_database.test.name}"
+  roles    = ["${singlestore_role.test.name}"]
 }
 `, dbName, dbName, roleName)
 }

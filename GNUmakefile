@@ -1,12 +1,12 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
-PKG_NAME=mysql
+PKG_NAME=singlestore
 VERSION=$(shell git describe --abbrev=0 --tag)
 TERRAFORM_D?=~/.terraform.d
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
-PROVIDER_DIR?=$(TERRAFORM_D)/plugins/registry.terraform.io/winebarrel/mysql/$(subst v,,$(VERSION))/$(GOOS)_$(GOARCH)
+PROVIDER_DIR?=$(TERRAFORM_D)/plugins/registry.terraform.io/heap/singlestore/$(subst v,,$(VERSION))/$(GOOS)_$(GOARCH)
 
 default: build
 
@@ -15,7 +15,7 @@ build: fmtcheck
 
 install: build
 	mkdir -p $(PROVIDER_DIR)
-	cp terraform-provider-mysql $(PROVIDER_DIR)/terraform-provider-mysql_$(VERSION)
+	cp terraform-provider-singlestore $(PROVIDER_DIR)/terraform-provider-singlestore_$(VERSION)
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1

@@ -119,16 +119,18 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"mysql_tables": dataSourceTables(),
+			"singlestore_tables": dataSourceTables(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"mysql_database":      resourceDatabase(),
-			"mysql_grant":         resourceGrant(),
-			"mysql_role":          resourceRole(),
-			"mysql_user":          resourceUser(),
-			"mysql_user_password": resourceUserPassword(),
-			"mysql_sql":           resourceSql(),
+			"singlestore_database":      resourceDatabase(),
+			"singlestore_pipeline":      resourcePipeline(),
+			"singlestore_grant":         resourceGrant(),
+			"singlestore_role":          resourceRole(),
+			"singlestore_user":          resourceUser(),
+			"singlestore_user_password": resourceUserPassword(),
+			"singlestore_resource_pool": resourceResourcePool(),
+			"singlestore_sql":           resourceSql(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -152,6 +154,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		TLSConfig:               d.Get("tls").(string),
 		AllowNativePasswords:    d.Get("authentication_plugin").(string) == nativePasswords,
 		AllowCleartextPasswords: d.Get("authentication_plugin").(string) == cleartextPasswords,
+		MultiStatements:         true,
 	}
 
 	dialer, err := makeDialer(d)
@@ -197,12 +200,16 @@ func makeDialer(d *schema.ResourceData) (proxy.Dialer, error) {
 }
 
 func quoteIdentifier(in string) string {
-	return fmt.Sprintf("`%s`", identQuoteReplacer.Replace(in))
+	return fmt.Sprintf("'%s'", identQuoteReplacer.Replace(in))
+}
+
+func quote(in string) string {
+	return fmt.Sprintf("'%s'", in)
 }
 
 func serverVersion(db *sql.DB) (*version.Version, error) {
 	var versionString string
-	err := db.QueryRow("SELECT @@GLOBAL.innodb_version").Scan(&versionString)
+	err := db.QueryRow("SELECT @@GLOBAL.version").Scan(&versionString)
 	if err != nil {
 		return nil, err
 	}

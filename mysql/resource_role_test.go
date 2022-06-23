@@ -12,7 +12,7 @@ import (
 
 func TestAccRole_basic(t *testing.T) {
 	roleName := "tf-test-role"
-	resourceName := "mysql_role.test"
+	resourceName := "singlestore_role.test"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -101,7 +101,7 @@ func testAccRoleCheckDestroy(roleName string) resource.TestCheckFunc {
 
 func testAccRoleConfig_basic(roleName string) string {
 	return fmt.Sprintf(`
-resource "mysql_role" "test" {
+resource "singlestore_role" "test" {
   name = "%s"
 }
 `, roleName)

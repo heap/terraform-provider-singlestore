@@ -1,4 +1,4 @@
-module github.com/terraform-providers/terraform-provider-mysql
+module github.com/heap/terraform-provider-singlestore
 
 require (
 	github.com/go-sql-driver/mysql v1.4.0

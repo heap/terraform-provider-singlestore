@@ -63,6 +63,12 @@ func resourceUser() *schema.Resource {
 				ForceNew: true,
 				Default:  "NONE",
 			},
+
+			"default_resource_pool": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
 		},
 	}
 }
@@ -115,6 +121,9 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	if d.Get("default_resource_pool").(string) != "" {
+		stmtSQL += fmt.Sprintf(" WITH DEFAULT RESOURCE POOL = %s", d.Get("default_resource_pool").(string))
+	}
 	if currentVersion.GreaterThan(requiredVersion) && d.Get("tls_option").(string) != "" {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
@@ -206,6 +215,20 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	if d.HasChange("default_resource_pool") {
+		var stmtSQL string
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' %s",
+			d.Get("user").(string),
+			d.Get("host").(string),
+			fmt.Sprintf(" SET DEFAULT RESOURCE POOL = %s", d.Get("default_resource_pool").(string)))
+
+		log.Println("Executing statement:", stmtSQL)
+		_, err := db.Exec(stmtSQL)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -215,7 +238,7 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
+	stmtSQL := fmt.Sprintf("SELECT USER FROM information_schema.users WHERE USER='%s'",
 		d.Get("user").(string))
 
 	log.Println("Executing statement:", stmtSQL)
@@ -267,7 +290,7 @@ func ImportUser(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceDat
 	}
 
 	var count int
-	err = db.QueryRow("SELECT COUNT(1) FROM mysql.user WHERE user = ? AND host = ?", user, host).Scan(&count)
+	err = db.QueryRow("SELECT COUNT(1) FROM information_schema.user WHERE user = ? AND host = ?", user, host).Scan(&count)
 
 	if err != nil {
 		return nil, err
