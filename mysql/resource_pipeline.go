@@ -33,12 +33,14 @@ func resourcePipeline() *schema.Resource {
 			"kafka_endpoint": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 				Default:  "",
 			},
 
 			"kafka_topic": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 				Default:  "",
 			},
 
@@ -53,10 +55,17 @@ func resourcePipeline() *schema.Resource {
 				Optional: true,
 				Default:  "",
 			},
+
 			"schema": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
+			},
+
+			"start_pipeline": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
 			},
 		},
 	}
@@ -68,6 +77,9 @@ func CreatePipeline(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	name := d.Get("name").(string)
+	startPieline := d.Get("start_pipeline").(bool)
+
 	stmtSQL := pipelineConfigSQL("CREATE", d)
 	log.Println("Executing statement:", stmtSQL)
 
@@ -76,7 +88,17 @@ func CreatePipeline(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetId(d.Get("name").(string))
+	if startPieline {
+		startSQL := fmt.Sprintf("START PIPELINE %s", name)
+		log.Println("Executing statement:", startSQL)
+
+		_, err = db.Exec(startSQL)
+		if err != nil {
+			return err
+		}
+	}
+
+	d.SetId(name)
 
 	return ReadPipeline(d, meta)
 }
@@ -87,7 +109,7 @@ func UpdatePipeline(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	stmtSQL := pipelineConfigSQL("ALTER", d)
+	stmtSQL := pipelineConfigSQL("CREATE OR REPLACE", d)
 	log.Println("Executing statement:", stmtSQL)
 
 	_, err = db.Exec(stmtSQL)
@@ -163,7 +185,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	var schemaClause string
 
 	if defaultKafkaEndpoint != "" {
-		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' CONFIG %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
+		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
 	}
 	if defaultTableMapping != "" {
 		tableMappingClause = fmt.Sprintf("FORMAT AVRO (%s)", defaultTableMapping)
