@@ -28,10 +28,11 @@ builds:
     ignore:
       - goos: darwin
         goarch: "386"
-    binary: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    binary: "{{ .ProjectName }}"
 archives:
-  - format: zip
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - format: binary
+    files:
+    - none*
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
@@ -47,8 +48,8 @@ checksum:
 #       - "${signature}"
 #       - "--detach-sign"
 #       - "${artifact}"
-# release:
+release:
   # If you want to manually examine the release before its live, uncomment this line:
-  # draft: true
+  draft: false
 changelog:
   skip: true

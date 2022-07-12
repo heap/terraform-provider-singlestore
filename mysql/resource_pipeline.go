@@ -133,8 +133,17 @@ func ReadPipeline(d *schema.ResourceData, meta interface{}) error {
 
 	name := d.Id()
 	databaseName := d.Get("database_name").(string)
-	stmtSQL := fmt.Sprintf("BEGIN; USE %s; SHOW PIPELINES LIKE %s; COMMIT;", databaseName, quoteIdentifier(name))
 
+	exists, err := databaseExists(databaseName, meta)
+	if err != nil {
+		return fmt.Errorf("Error checking if database exists: %s", err)
+	}
+	if !exists {
+		d.SetId("")
+		return nil
+	}
+
+	stmtSQL := fmt.Sprintf("BEGIN; USE %s; SHOW PIPELINES LIKE %s; COMMIT;", databaseName, quoteIdentifier(name))
 	log.Println("Executing statement:", stmtSQL)
 	var _database string
 	var _state string
@@ -145,7 +154,7 @@ func ReadPipeline(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error during show databases: %s", err)
+		return fmt.Errorf("Error during show pipelines: %s", err)
 	}
 
 	d.Set("name", name)
