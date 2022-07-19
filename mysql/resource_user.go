@@ -60,7 +60,7 @@ func resourceUser() *schema.Resource {
 			"tls_option": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
+				ForceNew: false,
 				Default:  "NONE",
 			},
 
@@ -203,7 +203,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("tls_option") && currentVersion.GreaterThan(requiredVersion) {
 		var stmtSQL string
 
-		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'  REQUIRE %s",
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' REQUIRE %s",
 			d.Get("user").(string),
 			d.Get("host").(string),
 			fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string)))

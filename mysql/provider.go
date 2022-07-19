@@ -258,3 +258,37 @@ func connectToMySQL(conf *MySQLConfiguration) (*sql.DB, error) {
 	db.SetMaxOpenConns(conf.MaxOpenConns)
 	return db, nil
 }
+
+func (c *MySQLConfiguration) ConnectToMySQLDB(dbName string) (*sql.DB, error) {
+	// func (c *MySQLConfiguration) GetDbConn() (*sql.DB, error) {
+
+	c.Config.DBName = dbName
+	dsn := c.Config.FormatDSN()
+	var db *sql.DB
+	var err error
+
+	// When provisioning a database server there can often be a lag between
+	// when Terraform thinks it's available and when it is actually available.
+	// This is particularly acute when provisioning a server and then immediately
+	// trying to provision a database on it.
+	retryError := resource.Retry(c.ConnectRetryTimeoutSec, func() *resource.RetryError {
+		db, err = sql.Open("mysql", dsn)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		err = db.Ping()
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		return nil
+	})
+
+	if retryError != nil {
+		return nil, fmt.Errorf("Could not connect to server: %s", retryError)
+	}
+	db.SetConnMaxLifetime(c.MaxConnLifetime)
+	db.SetMaxOpenConns(c.MaxOpenConns)
+	return db, nil
+}

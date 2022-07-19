@@ -13,6 +13,9 @@ func resourceSql() *schema.Resource {
 		Read:   ReadSql,
 		Update: UpdateSql,
 		Delete: DeleteSql,
+		Importer: &schema.ResourceImporter{
+			State: ImportSql,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -22,13 +25,14 @@ func resourceSql() *schema.Resource {
 			},
 			"database_name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  "",
 				ForceNew: true,
 			},
 			"create_sql": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
+				ForceNew: false,
 			},
 			"update_sql": {
 				Type:     schema.TypeString,
@@ -45,13 +49,13 @@ func resourceSql() *schema.Resource {
 }
 
 func CreateSql(d *schema.ResourceData, meta interface{}) error {
-	db, err := meta.(*MySQLConfiguration).GetDbConn()
+	databaseName := d.Get("database_name").(string)
+	db, err := meta.(*MySQLConfiguration).ConnectToMySQLDB(databaseName)
 	if err != nil {
 		return err
 	}
 	name := d.Get("name").(string)
-	databaseName := d.Get("database_name").(string)
-	createSql := fmt.Sprintf("BEGIN; USE %s; %s COMMIT;", databaseName, d.Get("create_sql").(string))
+	createSql := d.Get("create_sql").(string)
 
 	log.Println("Executing SQL", createSql)
 
@@ -67,13 +71,13 @@ func CreateSql(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateSql(d *schema.ResourceData, meta interface{}) error {
-	db, err := meta.(*MySQLConfiguration).GetDbConn()
+	databaseName := d.Get("database_name").(string)
+	db, err := meta.(*MySQLConfiguration).ConnectToMySQLDB(databaseName)
 	if err != nil {
 		return err
 	}
 	name := d.Get("name").(string)
-	databaseName := d.Get("database_name").(string)
-	updateSql := fmt.Sprintf("BEGIN; USE %s; %s COMMIT;", databaseName, d.Get("update_sql").(string))
+	updateSql := d.Get("create_sql").(string)
 
 	log.Println("Executing SQL", updateSql)
 
@@ -109,4 +113,14 @@ func DeleteSql(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return err
+}
+
+func ImportSql(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	err := ReadSql(d, meta)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
