@@ -62,6 +62,12 @@ func resourcePipeline() *schema.Resource {
 				Default:  "",
 			},
 
+			"on_duplicate_key_update": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
 			"start_pipeline": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -188,10 +194,12 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultConfig := d.Get("config").(string)
 	defaultTableMapping := d.Get("table_mapping").(string)
 	defaultSchema := d.Get("schema").(string)
+	defaultOnDuplicateKeyUpdate := d.Get("on_duplicate_key_update").(string)
 
 	var pipelineClause string
 	var tableMappingClause string
 	var schemaClause string
+	var onDuplicateKeyUpdateClause string
 
 	if defaultKafkaEndpoint != "" {
 		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
@@ -202,9 +210,12 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	if defaultSchema != "" {
 		schemaClause = fmt.Sprintf("SCHEMA '%s'", defaultSchema)
 	}
+	if defaultOnDuplicateKeyUpdate != "" {
+		onDuplicateKeyUpdateClause = fmt.Sprintf("ON DUPLICATE KEY UPDATE %s", defaultOnDuplicateKeyUpdate)
+	}
 
 	return fmt.Sprintf(
-		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s INTO TABLE %s %s %s; COMMIT;",
+		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s INTO TABLE %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
@@ -212,6 +223,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 		name,
 		tableMappingClause,
 		schemaClause,
+		onDuplicateKeyUpdateClause,
 	)
 }
 
