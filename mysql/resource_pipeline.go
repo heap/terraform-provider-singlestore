@@ -30,6 +30,13 @@ func resourcePipeline() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"table_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+				Default:  "",
+			},
+
 			"kafka_endpoint": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -197,6 +204,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	databaseName := d.Get("database_name").(string)
 	defaultKafkaEndpoint := d.Get("kafka_endpoint").(string)
 	defaultKafkaTopic := d.Get("kafka_topic").(string)
+	defaultTableName := d.Get("table_name").(string)
 	defaultConfig := d.Get("config").(string)
 	defaultTableMapping := d.Get("table_mapping").(string)
 	defaultSchema := d.Get("schema").(string)
@@ -208,6 +216,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	var schemaClause string
 	var onDuplicateKeyUpdateClause string
 	var setClause string
+	var tableName string
 
 	if defaultKafkaEndpoint != "" {
 		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
@@ -225,13 +234,19 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 		setClause = fmt.Sprintf("SET %s", defaultSet)
 	}
 
+	if defaultTableName != "" {
+		tableName = defaultTableName
+	} else {
+		tableName = name
+	}
+
 	return fmt.Sprintf(
 		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s INTO TABLE %s %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
 		pipelineClause,
-		name,
+		tableName,
 		tableMappingClause,
 		schemaClause,
 		setClause,

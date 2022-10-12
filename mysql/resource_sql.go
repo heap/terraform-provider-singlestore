@@ -77,7 +77,7 @@ func UpdateSql(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	name := d.Get("name").(string)
-	updateSql := d.Get("create_sql").(string)
+	updateSql := d.Get("update_sql").(string)
 
 	log.Println("Executing SQL", updateSql)
 
