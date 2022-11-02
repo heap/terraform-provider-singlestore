@@ -81,6 +81,12 @@ func resourcePipeline() *schema.Resource {
 				Default:  "",
 			},
 
+			"where": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
 			"procedure": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -216,6 +222,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultSchema := d.Get("schema").(string)
 	defaultOnDuplicateKeyUpdate := d.Get("on_duplicate_key_update").(string)
 	defaultSet := d.Get("set").(string)
+	defaultWhere := d.Get("where").(string)
 	defaultProcedure := d.Get("procedure").(string)
 
 	var pipelineClause string
@@ -223,6 +230,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	var schemaClause string
 	var onDuplicateKeyUpdateClause string
 	var setClause string
+	var whereClause string
 	var tableName string
 	var intoStatement string
 
@@ -242,6 +250,10 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 		setClause = fmt.Sprintf("SET %s", defaultSet)
 	}
 
+	if defaultWhere != "" {
+		whereClause = fmt.Sprintf("WHERE %s", defaultWhere)
+	}
+
 	if defaultTableName != "" {
 		tableName = defaultTableName
 	} else {
@@ -254,7 +266,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	}
 
 	return fmt.Sprintf(
-		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s; COMMIT;",
+		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
@@ -263,6 +275,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 		tableMappingClause,
 		schemaClause,
 		setClause,
+		whereClause,
 		onDuplicateKeyUpdateClause,
 	)
 }
