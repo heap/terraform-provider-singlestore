@@ -28,7 +28,7 @@ func resourceResourcePool() *schema.Resource {
 			"memory_percentage": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  0,
+				Default:  100,
 			},
 
 			"query_timeout": {
@@ -52,13 +52,13 @@ func resourceResourcePool() *schema.Resource {
 			"max_concurrency": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  0,
+				Default:  1,
 			},
 
 			"max_queue_depth": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  0,
+				Default:  1,
 			},
 		},
 	}
@@ -86,29 +86,26 @@ func resourcePoolConfigSQL(verb string, d *schema.ResourceData) string {
 	var configStatement string
 
 	memory := d.Get("memory_percentage").(int)
-	if memory != 0 {
-		configStatement = fmt.Sprintf("MEMORY_PERCENTAGE=%d, %s", memory, configStatement)
-	}
+	configStatement = fmt.Sprintf("MEMORY_PERCENTAGE=%d, %s", memory, configStatement)
+
 	timeout := d.Get("query_timeout").(int)
-	if timeout != 0 {
-		configStatement = fmt.Sprintf("QUERY_TIMEOUT=%d, %s", timeout, configStatement)
-	}
+	configStatement = fmt.Sprintf("QUERY_TIMEOUT=%d, %s", timeout, configStatement)
+
 	soft_cpu_limit := d.Get("soft_cpu_limit_percentage").(int)
 	if soft_cpu_limit != 0 {
 		configStatement = fmt.Sprintf("SOFT_CPU_LIMIT_PERCENTAGE=%d, %s", soft_cpu_limit, configStatement)
 	}
+
 	hard_cpu_limit := d.Get("hard_cpu_limit_percentage").(int)
 	if hard_cpu_limit != 0 {
 		configStatement = fmt.Sprintf("HARD_CPU_LIMIT_PERCENTAGE=%d, %s", hard_cpu_limit, configStatement)
 	}
+
 	concurrency := d.Get("max_concurrency").(int)
-	if concurrency != 0 {
-		configStatement = fmt.Sprintf("MAX_CONCURRENCY=%d, %s", concurrency, configStatement)
-	}
+	configStatement = fmt.Sprintf("MAX_CONCURRENCY=%d, %s", concurrency, configStatement)
+
 	queue_depth := d.Get("max_queue_depth").(int)
-	if queue_depth != 0 {
-		configStatement = fmt.Sprintf("MAX_QUEUE_DEPTH=%d, %s", queue_depth, configStatement)
-	}
+	configStatement = fmt.Sprintf("MAX_QUEUE_DEPTH=%d, %s", queue_depth, configStatement)
 
 	stmtSQL := fmt.Sprintf("%s RESOURCE POOL %s",
 		verb,
