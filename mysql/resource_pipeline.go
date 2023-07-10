@@ -98,6 +98,18 @@ func resourcePipeline() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
+
+			"resource_pool": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
+			"max_partitions_per_batch": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
 		},
 	}
 }
@@ -224,6 +236,8 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultSet := d.Get("set").(string)
 	defaultWhere := d.Get("where").(string)
 	defaultProcedure := d.Get("procedure").(string)
+	defaultResourcePool := d.Get("resource_pool").(string)
+	defaultMaxPartitionsPerBatch := d.Get("max_partitions_per_batch").(int)
 
 	var pipelineClause string
 	var tableMappingClause string
@@ -233,6 +247,8 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	var whereClause string
 	var tableName string
 	var intoStatement string
+	var resourcePool string
+	var maxPartitionsPerBatch string
 
 	if defaultKafkaEndpoint != "" {
 		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
@@ -264,13 +280,21 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	} else {
 		intoStatement = fmt.Sprintf("INTO PROCEDURE %s", defaultProcedure)
 	}
+	if defaultResourcePool != "" {
+		resourcePool = fmt.Sprintf("RESOURCE POOL %s", defaultResourcePool)
+	}
+	if defaultMaxPartitionsPerBatch != 0 {
+		maxPartitionsPerBatch = fmt.Sprintf("MAX_PARTITIONS_PER_BATCH %d", defaultMaxPartitionsPerBatch)
+	}
 
 	return fmt.Sprintf(
-		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s; COMMIT;",
+		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
 		pipelineClause,
+		maxPartitionsPerBatch,
+		resourcePool,
 		intoStatement,
 		tableMappingClause,
 		schemaClause,
