@@ -240,6 +240,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultMaxPartitionsPerBatch := d.Get("max_partitions_per_batch").(int)
 
 	var pipelineClause string
+	var skipConstraintErrorClause string
 	var tableMappingClause string
 	var schemaClause string
 	var onDuplicateKeyUpdateClause string
@@ -277,6 +278,8 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	}
 	if defaultProcedure == "" {
 		intoStatement = fmt.Sprintf("INTO TABLE %s", tableName)
+		// pipelines into procedures don't support SKIP CONSTRAINT ERRORS
+		skipConstraintErrorClause = "SKIP CONSTRAINT ERRORS"
 	} else {
 		intoStatement = fmt.Sprintf("INTO PROCEDURE %s", defaultProcedure)
 	}
@@ -288,13 +291,14 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	}
 
 	return fmt.Sprintf(
-		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s %s %s; COMMIT;",
+		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
 		pipelineClause,
 		maxPartitionsPerBatch,
 		resourcePool,
+		skipConstraintErrorClause,
 		intoStatement,
 		tableMappingClause,
 		schemaClause,
