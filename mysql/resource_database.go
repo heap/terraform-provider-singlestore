@@ -126,7 +126,17 @@ func DeleteDatabase(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	name := d.Id()
-	stmtSQL := "DROP DATABASE " + quoteIdentifier(name)
+	s3Path := d.Get("s3_path").(string)
+	var verb string
+
+	// bottomless databases need to be "DETACH"ed.
+	if s3Path != "" {
+		verb = "DETACH"
+	} else {
+		verb = "DROP"
+	}
+
+	stmtSQL := fmt.Sprintf("%s DATABASE %s", verb, quoteIdentifier(name))
 	log.Println("Executing statement:", stmtSQL)
 
 	_, err = db.Exec(stmtSQL)
