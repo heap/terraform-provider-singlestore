@@ -110,7 +110,9 @@ func flattenList(list []interface{}, template string) string {
 
 func formatDatabaseName(database string) string {
 	if strings.Compare(database, "*") != 0 && !strings.HasSuffix(database, "`") {
-		database = fmt.Sprintf("`%s`", database)
+		if !strings.HasPrefix(database, "RESOURCE POOL") {
+			database = fmt.Sprintf("`%s`", database)
+		}
 
 		if strings.HasPrefix(database, "`PROCEDURE ") {
 			database = strings.Replace(database, "`PROCEDURE ", "PROCEDURE `", 1)
@@ -118,6 +120,12 @@ func formatDatabaseName(database string) string {
 	}
 
 	return database
+}
+
+func shouldSkipTable(database string) bool {
+	// :KLUDGE: skip table statement for RESOURCE POOL GRANTS
+	// https://docs.singlestore.com/cloud/reference/sql-reference/security-management-commands/grant/
+	return strings.HasPrefix(database, "RESOURCE POOL")
 }
 
 func formatTableName(table string) string {
@@ -194,11 +202,14 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	database := formatDatabaseName(d.Get("database").(string))
-
 	table := formatTableName(d.Get("table").(string))
+	skipTable := shouldSkipTable(d.Get("database").(string))
 
 	if (!isRole || hasPrivs) && rolesGranted == 0 {
 		grantOn = fmt.Sprintf(" ON %s.%s", database, table)
+	}
+	if skipTable {
+		grantOn = fmt.Sprintf(" ON %s", database)
 	}
 
 	stmtSQL := fmt.Sprintf("GRANT %s%s TO %s",
@@ -254,7 +265,7 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 	grants, err := showGrants(db, userOrRole)
 
 	if err != nil {
-		log.Printf("[WARN] GRANT not found for %s - removing from state", userOrRole)
+		log.Printf("[WARN] GRANT not found for %s - removing from state. err: %w", userOrRole, err)
 		d.SetId("")
 		return nil
 	}
@@ -330,8 +341,13 @@ func updatePrivileges(d *schema.ResourceData, db *sql.DB, user string, database 
 		for i, v := range revokeIfs {
 			revokes[i] = v.(string)
 		}
+		skipTable := shouldSkipTable(database)
+		dbtable := fmt.Sprintf("%s.%s", database, table)
+		if skipTable {
+			dbtable = database
+		}
 
-		stmtSQL := fmt.Sprintf("REVOKE %s ON %s.%s FROM %s", strings.Join(revokes, ","), database, table, user)
+		stmtSQL := fmt.Sprintf("REVOKE %s ON %s FROM %s", strings.Join(revokes, ","), dbtable, user)
 
 		log.Printf("[DEBUG] SQL: %s", stmtSQL)
 
@@ -366,8 +382,8 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	database := formatDatabaseName(d.Get("database").(string))
-
 	table := formatTableName(d.Get("table").(string))
+	skipTable := shouldSkipTable(d.Get("database").(string))
 
 	hasRoles, err := supportsRoles(db)
 	if err != nil {
@@ -386,11 +402,15 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	roles := d.Get("roles").(*schema.Set)
 	privileges := d.Get("privileges").(*schema.Set)
 
+	dbtable := fmt.Sprintf("%s.%s", database, table)
+	if skipTable {
+		dbtable = database
+	}
+
 	var sql string
 	if !isRole && len(roles.List()) == 0 {
-		sql = fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM %s",
-			database,
-			table,
+		sql = fmt.Sprintf("REVOKE GRANT OPTION ON %s FROM %s",
+			dbtable,
 			userOrRole)
 
 		log.Printf("[DEBUG] SQL: %s", sql)
@@ -483,7 +503,7 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 	}
 
 	defer rows.Close()
-	re := regexp.MustCompile(`^GRANT (.+) ON (.+?)\.(.+?) TO`)
+	re := regexp.MustCompile(`^GRANT (.+) ON (.+?)(?:\.(.+?))? TO`)
 	reGrant := regexp.MustCompile(`\bGRANT OPTION\b`)
 
 	for rows.Next() {
@@ -497,7 +517,7 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 
 		m := re.FindStringSubmatch(rawGrant)
 
-		if len(m) != 4 {
+		if len(m) != 3 && len(m) != 4 {
 			return nil, fmt.Errorf("failed to parse grant statement: %s", rawGrant)
 		}
 
@@ -508,13 +528,18 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 		for i, priv := range priv_list {
 			privileges[i] = strings.TrimSpace(priv)
 		}
+		table := strings.Trim(m[3], "`")
+		if len(m) == 4 {
+			table = "*"
+		}
 
 		grant := &MySQLGrant{
 			Database:   strings.ReplaceAll(m[2], "`", ""),
-			Table:      strings.Trim(m[3], "`"),
+			Table:      table,
 			Privileges: privileges,
 			Grant:      reGrant.MatchString(rawGrant),
 		}
+		log.Printf("grant: %v", grant)
 
 		grants = append(grants, grant)
 	}
