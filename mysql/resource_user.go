@@ -91,6 +91,8 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 			authStm = " IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
 		case "mysql_no_login":
 			authStm = " IDENTIFIED WITH mysql_no_login"
+		case "authentication_saml":
+			authStm = " IDENTIFIED WITH authentication_saml"
 		}
 	}
 
