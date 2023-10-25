@@ -64,9 +64,17 @@ func resourcePipeline() *schema.Resource {
 			},
 
 			"schema": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Default:       "",
+				ConflictsWith: []string{"schema_registry"},
+			},
+
+			"schema_registry": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Default:       "",
+				ConflictsWith: []string{"schema"},
 			},
 
 			"on_duplicate_key_update": {
@@ -232,6 +240,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultConfig := d.Get("config").(string)
 	defaultTableMapping := d.Get("table_mapping").(string)
 	defaultSchema := d.Get("schema").(string)
+	defaultSchemaRegistry := d.Get("schema_registry").(string)
 	defaultOnDuplicateKeyUpdate := d.Get("on_duplicate_key_update").(string)
 	defaultSet := d.Get("set").(string)
 	defaultWhere := d.Get("where").(string)
@@ -259,6 +268,9 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	}
 	if defaultSchema != "" {
 		schemaClause = fmt.Sprintf("SCHEMA '%s'", defaultSchema)
+	}
+	if defaultSchemaRegistry != "" {
+		schemaClause = fmt.Sprintf("SCHEMA REGISTRY '%s'", defaultSchemaRegistry)
 	}
 	if defaultOnDuplicateKeyUpdate != "" {
 		onDuplicateKeyUpdateClause = fmt.Sprintf("ON DUPLICATE KEY UPDATE %s", defaultOnDuplicateKeyUpdate)
