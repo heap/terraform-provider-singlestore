@@ -63,6 +63,13 @@ func resourcePipeline() *schema.Resource {
 				Default:  "",
 			},
 
+			"mapping_format": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+				Default:  "AVRO",
+			},
+
 			"schema": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -239,6 +246,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultTableName := d.Get("table_name").(string)
 	defaultConfig := d.Get("config").(string)
 	defaultTableMapping := d.Get("table_mapping").(string)
+	defaultMappingFormat := d.Get("mapping_format").(string)
 	defaultSchema := d.Get("schema").(string)
 	defaultSchemaRegistry := d.Get("schema_registry").(string)
 	defaultOnDuplicateKeyUpdate := d.Get("on_duplicate_key_update").(string)
@@ -264,7 +272,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
 	}
 	if defaultTableMapping != "" {
-		tableMappingClause = fmt.Sprintf("FORMAT AVRO (%s)", defaultTableMapping)
+		tableMappingClause = fmt.Sprintf("FORMAT %s (%s)", defaultMappingFormat, defaultTableMapping)
 	}
 	if defaultSchema != "" {
 		schemaClause = fmt.Sprintf("SCHEMA '%s'", defaultSchema)
