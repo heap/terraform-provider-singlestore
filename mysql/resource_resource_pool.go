@@ -31,6 +31,12 @@ func resourceResourcePool() *schema.Resource {
 				Default:  100,
 			},
 
+			"query_memory_percentage": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
+
 			"query_timeout": {
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -87,6 +93,11 @@ func resourcePoolConfigSQL(verb string, d *schema.ResourceData) string {
 
 	memory := d.Get("memory_percentage").(int)
 	configStatement = fmt.Sprintf("MEMORY_PERCENTAGE=%d, %s", memory, configStatement)
+
+	queryMemory := d.Get("query_memory_percentage").(int)
+	if queryMemory != 0 {
+		configStatement = fmt.Sprintf("QUERY_MEMORY_PERCENTAGE=%d, %s", queryMemory, configStatement)
+	}
 
 	timeout := d.Get("query_timeout").(int)
 	configStatement = fmt.Sprintf("QUERY_TIMEOUT=%d, %s", timeout, configStatement)
