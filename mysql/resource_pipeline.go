@@ -125,6 +125,12 @@ func resourcePipeline() *schema.Resource {
 				Optional: true,
 				Default:  0,
 			},
+
+			"batch_interval_ms": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
 		},
 	}
 }
@@ -194,7 +200,7 @@ func ReadPipeline(d *schema.ResourceData, meta interface{}) error {
 
 	exists, err := databaseExists(databaseName, meta)
 	if err != nil {
-		return fmt.Errorf("Error checking if database exists: %s", err)
+		return fmt.Errorf("error checking if database exists: %s", err)
 	}
 	if !exists {
 		d.SetId("")
@@ -212,7 +218,7 @@ func ReadPipeline(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error during show pipelines: %s", err)
+		return fmt.Errorf("error during show pipelines: %s", err)
 	}
 
 	d.Set("name", name)
@@ -255,6 +261,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	defaultProcedure := d.Get("procedure").(string)
 	defaultResourcePool := d.Get("resource_pool").(string)
 	defaultMaxPartitionsPerBatch := d.Get("max_partitions_per_batch").(int)
+	defaultBatchIntervalMs := d.Get("batch_interval_ms").(int)
 
 	var pipelineClause string
 	var skipConstraintErrorClause string
@@ -267,6 +274,7 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	var intoStatement string
 	var resourcePool string
 	var maxPartitionsPerBatch string
+	var batchInterval string
 
 	if defaultKafkaEndpoint != "" {
 		pipelineClause = fmt.Sprintf("KAFKA '%s/%s' %s", defaultKafkaEndpoint, defaultKafkaTopic, defaultConfig)
@@ -306,16 +314,20 @@ func pipelineConfigSQL(verb string, d *schema.ResourceData) string {
 	if defaultResourcePool != "" {
 		resourcePool = fmt.Sprintf("RESOURCE POOL %s", defaultResourcePool)
 	}
+	if defaultBatchIntervalMs != 0 {
+		batchInterval = fmt.Sprintf("BATCH_INTERVAL %d", defaultBatchIntervalMs)
+	}
 	if defaultMaxPartitionsPerBatch != 0 {
 		maxPartitionsPerBatch = fmt.Sprintf("MAX_PARTITIONS_PER_BATCH %d", defaultMaxPartitionsPerBatch)
 	}
 
 	return fmt.Sprintf(
-		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s %s %s %s; COMMIT;",
+		"BEGIN; USE %s; %s PIPELINE %s AS LOAD DATA %s %s %s %s %s %s %s %s %s %s %s; COMMIT;",
 		databaseName,
 		verb,
 		name,
 		pipelineClause,
+		batchInterval,
 		maxPartitionsPerBatch,
 		resourcePool,
 		skipConstraintErrorClause,
