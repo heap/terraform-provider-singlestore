@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   goreleaser:
-    runs-on: ubuntu24-medium
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -36,6 +36,23 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
+
+      - name: Install CSQ CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          INSTALL_DIR="$HOME/.local/bin"
+          mkdir -p "$INSTALL_DIR"
+          echo "$INSTALL_DIR" >> $GITHUB_PATH
+          
+          # Download csq CLI from contentsquare/platform_csq-go-cli
+          gh release download -R contentsquare/platform_csq-go-cli -p "*$(uname | tr A-Z a-z)_$(uname -m | sed 's/x86_64/amd64/').tar.gz"
+          
+          # Extract csq binary
+          tar xzvf "$(ls -t platform_csq-go-cli_*.tar.gz | head -n1)" -C "$INSTALL_DIR" csq
+          
+          # Verify installation
+          "$INSTALL_DIR/csq" --version
 
       - name: Retrieve secrets from Vault
         uses: ContentSquare/action-vault@v1
